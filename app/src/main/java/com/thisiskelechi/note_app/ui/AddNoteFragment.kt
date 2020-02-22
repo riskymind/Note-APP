@@ -8,6 +8,8 @@ import android.view.View
 import android.view.ViewGroup
 
 import com.thisiskelechi.note_app.R
+import com.thisiskelechi.note_app.db.Note
+import com.thisiskelechi.note_app.db.NoteDatabase
 
 /**
  * A simple [Fragment] subclass.
@@ -22,5 +24,9 @@ class AddNoteFragment : Fragment() {
         return inflater.inflate(R.layout.fragment_add_note, container, false)
     }
 
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+        super.onActivityCreated(savedInstanceState)
 
+//        NoteDatabase(activity!!).getNoteDao().addNote(Note)
+    }
 }
