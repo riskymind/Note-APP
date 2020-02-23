@@ -1,12 +1,11 @@
 package com.thisiskelechi.note_app.ui
 
 
+import android.app.AlertDialog
 import android.os.AsyncTask
 import android.os.Bundle
+import android.view.*
 import androidx.fragment.app.Fragment
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
 import android.widget.Toast
 import androidx.navigation.Navigation
 
@@ -21,16 +20,26 @@ import kotlinx.coroutines.launch
  */
 class AddNoteFragment : BaseFragment() {
 
+    private var note: Note? = null
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
+
+        setHasOptionsMenu(true)
         // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_add_note, container, false)
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
+
+        arguments?.let {
+            note = AddNoteFragmentArgs.fromBundle(it).note
+            edit_text_title.setText(note?.title)
+            edit_text_note.setText(note?.note)
+        }
 
         button_save.setOnClickListener {view ->
             val noteTitle = edit_text_title.text.toString().trim()
@@ -49,11 +58,18 @@ class AddNoteFragment : BaseFragment() {
             }
 
             launch {
-            val note = Note(noteTitle, noteBody)
-                context?.let {
-                    NoteDatabase(it).getNoteDao().addNote(note)
-                    it.toast("Note Saved!!")
 
+                context?.let {
+                    val modifyNote = Note(noteTitle, noteBody)
+
+                    if (note == null) {
+                        NoteDatabase(it).getNoteDao().addNote(modifyNote)
+                        it.toast("Note Saved!!")
+                    }else {
+                        modifyNote.id = note!!.id
+                        NoteDatabase(it).getNoteDao().updateNote(modifyNote)
+                        it.toast("Note Updated!!")
+                    }
                     val action = AddNoteFragmentDirections.actionSaveNote()
                     Navigation.findNavController(view).navigate(action)
                 }
@@ -65,4 +81,33 @@ class AddNoteFragment : BaseFragment() {
         }
     }
 
+    private fun deleteNote() {
+        AlertDialog.Builder(context).apply {
+            setTitle("Are You Sure?")
+            setMessage("You cannot undo this message")
+            setPositiveButton("Yes") {_, _ ->
+                launch {
+                    NoteDatabase(context).getNoteDao().deleteNote(note!!)
+                    val action = AddNoteFragmentDirections.actionSaveNote()
+                    Navigation.findNavController(view!!).navigate(action)
+                }
+            }
+            setNegativeButton("No"){ _, _ ->
+
+            }
+        }.create().show()
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when(item.itemId) {
+            R.id.delete -> if (note != null) deleteNote() else context?.toast("Cannot Delete Note")
+        }
+
+        return super.onOptionsItemSelected(item)
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        super.onCreateOptionsMenu(menu, inflater)
+        inflater.inflate(R.menu.menu, menu)
+    }
 }
